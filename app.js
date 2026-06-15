@@ -72,6 +72,7 @@ const els = {
   orderForm: document.getElementById("orderForm"),
   entryCard: document.getElementById("entryCard"),
   customerCode: document.getElementById("customerCode"),
+  orderNotes: document.getElementById("orderNotes"),
   orderTableBody: document.getElementById("orderTableBody"),
   orderCards: document.getElementById("orderCards"),
   orderDetailPanel: document.getElementById("orderDetailPanel"),
@@ -93,6 +94,7 @@ async function init() {
   bindInlineEditing();
   bindAuth();
   bindExport();
+  bindNotesField();
   setupSupabase();
   await loadOrders();
   renderAll();
@@ -188,6 +190,24 @@ function bindAuth() {
 
 function bindExport() {
   els.exportExcelButton.addEventListener("click", exportOrdersToExcel);
+}
+
+function bindNotesField() {
+  els.orderNotes.addEventListener("focus", () => {
+    els.orderNotes.classList.add("is-expanded");
+  });
+
+  els.orderNotes.addEventListener("blur", () => {
+    if (!els.orderNotes.value.trim()) {
+      els.orderNotes.classList.remove("is-expanded");
+    }
+  });
+
+  els.orderNotes.addEventListener("input", () => {
+    if (els.orderNotes.value.trim()) {
+      els.orderNotes.classList.add("is-expanded");
+    }
+  });
 }
 
 function setupSupabase() {

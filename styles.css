@@ -340,6 +340,16 @@ body {
   display: none;
 }
 
+.compact-notes {
+  min-height: 72px;
+  transition: min-height 0.18s ease, box-shadow 0.18s ease;
+}
+
+.compact-notes:focus,
+.compact-notes.is-expanded {
+  min-height: 140px;
+}
+
 .entry-grid textarea,
 .entry-grid .submit-btn {
   grid-column: 1 / -1;
