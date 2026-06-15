@@ -2,6 +2,7 @@ const demoOrders = [
   {
     id: "o-001",
     order_date: "2026-06-09",
+    customer_code: "harvey",
     customer_invoice_no: "CUS-INV-2401",
     factory_invoice_no: "FAC-INV-7712",
     fe_date: "2026-06-12",
@@ -18,6 +19,7 @@ const demoOrders = [
   {
     id: "o-002",
     order_date: "2026-06-11",
+    customer_code: "greenhome",
     customer_invoice_no: "CUS-INV-2402",
     factory_invoice_no: "FAC-INV-7719",
     fe_date: "2026-06-15",
@@ -42,13 +44,27 @@ const statusLabels = {
 };
 
 const state = {
-  orders: [],
+  supabase: null,
   mode: "demo",
-  selectedOrderId: null
+  orders: [],
+  selectedOrderId: null,
+  session: null,
+  profile: null
 };
 
 const els = {
+  authPanel: document.getElementById("authPanel"),
+  authModeBadge: document.getElementById("authModeBadge"),
+  authMessage: document.getElementById("authMessage"),
+  authEmail: document.getElementById("authEmail"),
+  authPassword: document.getElementById("authPassword"),
+  authCustomerCode: document.getElementById("authCustomerCode"),
+  signInButton: document.getElementById("signInButton"),
+  signUpButton: document.getElementById("signUpButton"),
+  signOutButton: document.getElementById("signOutButton"),
   orderForm: document.getElementById("orderForm"),
+  entryCard: document.getElementById("entryCard"),
+  customerCode: document.getElementById("customerCode"),
   orderTableBody: document.getElementById("orderTableBody"),
   orderCards: document.getElementById("orderCards"),
   orderDetailPanel: document.getElementById("orderDetailPanel"),
@@ -67,6 +83,9 @@ init();
 async function init() {
   bindForm();
   bindSelection();
+  bindInlineEditing();
+  bindAuth();
+  setupSupabase();
   await loadOrders();
   renderAll();
 }
@@ -74,8 +93,10 @@ async function init() {
 function bindForm() {
   els.orderForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
     const payload = {
       order_date: document.getElementById("orderDate").value,
+      customer_code: document.getElementById("customerCode").value.trim().toLowerCase(),
       customer_invoice_no: document.getElementById("customerInvoiceNo").value.trim(),
       factory_invoice_no: document.getElementById("factoryInvoiceNo").value.trim(),
       fe_date: document.getElementById("feDate").value,
@@ -90,8 +111,13 @@ function bindForm() {
       notes: document.getElementById("orderNotes").value.trim()
     };
 
-    if (!payload.order_date || !payload.customer_invoice_no) {
-      showToast("Please enter order date and customer invoice number.");
+    if (!payload.order_date || !payload.customer_invoice_no || !payload.customer_code) {
+      showToast("Please enter order date, customer invoice number, and customer short name.");
+      return;
+    }
+
+    if (!canManageOrders()) {
+      showToast("Only admin accounts can create or edit orders.");
       return;
     }
 
@@ -125,50 +151,302 @@ function bindSelection() {
   });
 }
 
-async function loadOrders() {
-  state.orders = [...demoOrders];
-}
+function bindInlineEditing() {
+  els.orderTableBody.addEventListener("change", async (event) => {
+    const field = event.target.dataset.field;
+    const orderId = event.target.dataset.orderId;
 
-async function saveOrder(payload) {
-  demoOrders.unshift({
-    id: `o-${crypto.randomUUID()}`,
-    ...payload
+    if (!field || !orderId) {
+      return;
+    }
+
+    if (!canManageOrders()) {
+      showToast("Only admin accounts can edit orders.");
+      renderAll();
+      return;
+    }
+
+    await updateOrderField(orderId, field, event.target.value);
   });
 }
 
+function bindAuth() {
+  els.signInButton.addEventListener("click", signIn);
+  els.signUpButton.addEventListener("click", signUp);
+  els.signOutButton.addEventListener("click", signOut);
+}
+
+function setupSupabase() {
+  const config = window.APP_CONFIG || {};
+  if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY || !window.supabase) {
+    setDemoMode("Demo mode. Configure Supabase to enable admin and customer sign-in.");
+    return;
+  }
+
+  state.supabase = window.supabase.createClient(
+    config.SUPABASE_URL,
+    config.SUPABASE_ANON_KEY
+  );
+  state.mode = "cloud";
+}
+
+async function loadOrders() {
+  if (state.mode === "demo" || !state.supabase) {
+    state.orders = [...demoOrders];
+    if (!state.selectedOrderId && state.orders.length) {
+      state.selectedOrderId = state.orders[0].id;
+    }
+    return;
+  }
+
+  const {
+    data: { session }
+  } = await state.supabase.auth.getSession();
+  state.session = session;
+
+  if (!session) {
+    state.profile = null;
+    state.orders = [];
+    state.selectedOrderId = null;
+    return;
+  }
+
+  state.profile = await loadProfile(session.user.id);
+
+  const { data, error } = await state.supabase
+    .from("orders")
+    .select("*")
+    .order("order_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showToast(error.message);
+    state.orders = [];
+    state.selectedOrderId = null;
+    return;
+  }
+
+  state.orders = data || [];
+
+  if (!state.selectedOrderId || !state.orders.some((item) => item.id === state.selectedOrderId)) {
+    state.selectedOrderId = state.orders[0]?.id || null;
+  }
+}
+
+async function loadProfile(userId) {
+  const { data, error } = await state.supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+async function saveOrder(payload) {
+  if (state.mode === "demo" || !state.supabase) {
+    demoOrders.unshift({
+      id: `o-${crypto.randomUUID()}`,
+      ...payload
+    });
+    return;
+  }
+
+  const { error } = await state.supabase.from("orders").insert(payload);
+  if (error) {
+    showToast(error.message);
+  }
+}
+
+async function updateOrderField(orderId, field, value) {
+  const nextValue = value ?? "";
+
+  if (state.mode === "demo" || !state.supabase) {
+    const stateOrder = state.orders.find((item) => item.id === orderId);
+    const demoOrder = demoOrders.find((item) => item.id === orderId);
+
+    if (stateOrder) {
+      stateOrder[field] = nextValue;
+    }
+
+    if (demoOrder) {
+      demoOrder[field] = nextValue;
+    }
+
+    renderMetrics();
+    renderCards();
+    renderDetailPanel();
+    showToast("Order updated.");
+    return;
+  }
+
+  const { error } = await state.supabase
+    .from("orders")
+    .update({ [field]: nextValue })
+    .eq("id", orderId);
+
+  if (error) {
+    showToast(error.message);
+    return;
+  }
+
+  const stateOrder = state.orders.find((item) => item.id === orderId);
+  if (stateOrder) {
+    stateOrder[field] = nextValue;
+  }
+
+  renderMetrics();
+  renderCards();
+  renderDetailPanel();
+  showToast("Order updated.");
+}
+
+async function signUp() {
+  if (!state.supabase) {
+    showToast("Supabase is not configured.");
+    return;
+  }
+
+  const email = els.authEmail.value.trim().toLowerCase();
+  const password = els.authPassword.value.trim();
+  const customerCode = els.authCustomerCode.value.trim().toLowerCase();
+
+  if (!email || !password || !customerCode) {
+    showToast("Please enter email, password, and customer short name.");
+    return;
+  }
+
+  const { error } = await state.supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        customer_code: customerCode
+      }
+    }
+  });
+
+  if (error) {
+    showToast(error.message);
+    return;
+  }
+
+  els.authCustomerCode.value = "";
+  showToast("Sign-up submitted. Check your email if confirmation is required.");
+}
+
+async function signIn() {
+  if (!state.supabase) {
+    showToast("Supabase is not configured.");
+    return;
+  }
+
+  const email = els.authEmail.value.trim().toLowerCase();
+  const password = els.authPassword.value.trim();
+
+  if (!email || !password) {
+    showToast("Please enter email and password.");
+    return;
+  }
+
+  const { error } = await state.supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    showToast(error.message);
+    return;
+  }
+
+  await loadOrders();
+  renderAll();
+  showToast("Signed in.");
+}
+
+async function signOut() {
+  if (!state.supabase || !state.session) {
+    showToast("No active session.");
+    return;
+  }
+
+  await state.supabase.auth.signOut();
+  state.session = null;
+  state.profile = null;
+  await loadOrders();
+  renderAll();
+  showToast("Signed out.");
+}
+
 function renderAll() {
+  renderAuthPanel();
   renderTable();
   renderCards();
   renderDetailPanel();
   renderMetrics();
 }
 
-function renderTable() {
-  if (!state.orders.length) {
-    els.orderTableBody.innerHTML =
-      '<tr><td class="empty-row" colspan="13">No order records yet. Add your first one to get started.</td></tr>';
+function renderAuthPanel() {
+  if (state.mode === "demo") {
+    els.authModeBadge.textContent = "Demo";
+    els.authMessage.textContent = "Local preview mode. Sign-in will appear after the app is connected to Supabase.";
+    els.entryCard.classList.remove("is-restricted");
     return;
   }
+
+  if (!state.session) {
+    els.authModeBadge.textContent = "Cloud";
+    els.authMessage.textContent = "Sign in as admin to manage all orders, or sign up customers with their own short name so they only see matching orders.";
+    els.entryCard.classList.add("is-restricted");
+    return;
+  }
+
+  const roleLabel = canManageOrders() ? "Admin" : "Customer";
+  els.authModeBadge.textContent = roleLabel;
+  const codeText = state.profile?.customer_code ? ` Customer code: ${state.profile.customer_code}.` : "";
+  els.authMessage.textContent = `Signed in as ${state.session.user.email}.${codeText} ${canManageOrders() ? "You can manage all orders." : "You can only see your own orders."}`;
+
+  if (canManageOrders()) {
+    els.entryCard.classList.remove("is-restricted");
+  } else {
+    els.entryCard.classList.add("is-restricted");
+  }
+}
+
+function renderTable() {
+  if (!state.orders.length) {
+    const message = state.mode === "cloud" && !state.session
+      ? "Sign in to load your orders."
+      : "No order records yet. Add your first one to get started.";
+    els.orderTableBody.innerHTML =
+      `<tr><td class="empty-row" colspan="14">${message}</td></tr>`;
+    return;
+  }
+
+  const editable = canManageOrders();
 
   els.orderTableBody.innerHTML = state.orders
     .map(
       (order) => `
         <tr data-order-id="${safe(order.id)}" class="${state.selectedOrderId === order.id ? "is-selected" : ""}">
           <td>${safe(order.order_date)}</td>
+          <td>${safe(order.customer_code)}</td>
           <td>${safe(order.customer_invoice_no)}</td>
           <td>${safe(order.factory_invoice_no)}</td>
           <td>${safe(order.fe_date)}</td>
           <td>${safe(order.te_date)}</td>
-          <td>${safe(order.oa_process)}</td>
-          <td>${safe(order.production_finish_date)}</td>
-          <td><span class="table-pill ${safeClass(order.production_status)}">${safe(
-            statusLabels[order.production_status] || order.production_status
-          )}</span></td>
-          <td>${safe(order.u9_before_shipment)}</td>
-          <td>${safe(order.so_no)}</td>
-          <td>${safe(order.etd)}</td>
-          <td>${safe(order.eta)}</td>
-          <td>${safe(order.notes)}</td>
+          <td>${editable ? renderTextInput(order.id, "oa_process", order.oa_process, "OA Process") : safe(order.oa_process)}</td>
+          <td>${editable ? renderDateInput(order.id, "production_finish_date", order.production_finish_date) : safe(order.production_finish_date)}</td>
+          <td>${editable ? renderStatusSelect(order.id, order.production_status) : renderStatusPill(order.production_status)}</td>
+          <td>${editable ? renderTextInput(order.id, "u9_before_shipment", order.u9_before_shipment, "U9 before shipment") : safe(order.u9_before_shipment)}</td>
+          <td>${editable ? renderTextInput(order.id, "so_no", order.so_no, "SO") : safe(order.so_no)}</td>
+          <td>${editable ? renderDateInput(order.id, "etd", order.etd) : safe(order.etd)}</td>
+          <td>${editable ? renderDateInput(order.id, "eta", order.eta) : safe(order.eta)}</td>
+          <td>${editable ? renderTextarea(order.id, "notes", order.notes, "Notes") : safe(order.notes)}</td>
         </tr>
       `
     )
@@ -177,7 +455,10 @@ function renderTable() {
 
 function renderCards() {
   if (!state.orders.length) {
-    els.orderCards.innerHTML = '<div class="empty-card">No order records yet. Add your first one to get started.</div>';
+    const message = state.mode === "cloud" && !state.session
+      ? "Sign in to view your orders."
+      : "No order records yet.";
+    els.orderCards.innerHTML = `<div class="empty-card">${message}</div>`;
     return;
   }
 
@@ -188,7 +469,7 @@ function renderCards() {
           <div class="order-card-top">
             <div>
               <strong>${safe(order.customer_invoice_no)}</strong>
-              <span>${safe(order.factory_invoice_no)}</span>
+              <span>${safe(order.customer_code)}</span>
             </div>
             <span class="mobile-status ${safeClass(order.production_status)}">${safe(
               statusLabels[order.production_status] || order.production_status
@@ -222,17 +503,19 @@ function renderDetailPanel() {
   els.detailTitle.textContent = order.customer_invoice_no || "Order Details";
   els.detailSubtitle.textContent = `Status: ${statusLabels[order.production_status] || order.production_status}`;
   els.detailGrid.innerHTML = [
+    dataBox("Customer Short Name", order.customer_code),
     dataBox("Date of Order", order.order_date),
-    dataBox("ETA", order.eta),
     dataBox("Customer Invoice", order.customer_invoice_no),
     dataBox("Factory Invoice", order.factory_invoice_no),
     dataBox("F.E.", order.fe_date),
     dataBox("T.E.", order.te_date),
-    dataBox("Production Finish Date", order.production_finish_date),
-    dataBox("SO", order.so_no),
     dataBox("OA Process", order.oa_process, true),
+    dataBox("Production Finish Date", order.production_finish_date),
+    dataBox("Production Status", statusLabels[order.production_status] || order.production_status),
     dataBox("U9 before shipment", order.u9_before_shipment, true),
+    dataBox("SO", order.so_no),
     dataBox("ETD", order.etd),
+    dataBox("ETA", order.eta),
     dataBox("Notes", order.notes, true)
   ].join("");
 }
@@ -253,6 +536,51 @@ function renderMetrics() {
   els.followupOrders.textContent = String(followup);
 }
 
+function canManageOrders() {
+  return state.mode === "demo" || state.profile?.role === "admin";
+}
+
+function setDemoMode(message) {
+  state.mode = "demo";
+  state.session = null;
+  state.profile = null;
+  els.authModeBadge.textContent = "Demo";
+  els.authMessage.textContent = message;
+}
+
+function renderDateInput(orderId, field, value) {
+  return `<input class="cell-input" type="date" data-order-id="${safe(orderId)}" data-field="${safe(field)}" value="${safeAttr(
+    value
+  )}" />`;
+}
+
+function renderTextInput(orderId, field, value, placeholder) {
+  return `<input class="cell-input" type="text" data-order-id="${safe(orderId)}" data-field="${safe(field)}" value="${safeAttr(
+    value
+  )}" placeholder="${safeAttr(placeholder)}" />`;
+}
+
+function renderTextarea(orderId, field, value, placeholder) {
+  return `<textarea class="cell-textarea" data-order-id="${safe(orderId)}" data-field="${safe(field)}" placeholder="${safeAttr(
+    placeholder
+  )}">${safe(value)}</textarea>`;
+}
+
+function renderStatusSelect(orderId, value) {
+  const options = Object.entries(statusLabels)
+    .map(
+      ([optionValue, label]) =>
+        `<option value="${safeAttr(optionValue)}" ${optionValue === value ? "selected" : ""}>${safe(label)}</option>`
+    )
+    .join("");
+
+  return `<select class="cell-select" data-order-id="${safe(orderId)}" data-field="production_status">${options}</select>`;
+}
+
+function renderStatusPill(value) {
+  return `<span class="table-pill ${safeClass(value)}">${safe(statusLabels[value] || value)}</span>`;
+}
+
 function dataBox(label, value, wide = false) {
   return `
     <div class="data-box ${wide ? "wide" : ""}">
@@ -265,6 +593,19 @@ function dataBox(label, value, wide = false) {
 function safe(value) {
   if (!value) {
     return "-";
+  }
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function safeAttr(value) {
+  if (!value) {
+    return "";
   }
 
   return String(value)

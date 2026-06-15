@@ -26,9 +26,22 @@
           </p>
         </div>
         <div class="topbar-note">
-          <div class="simple-note">
-            <strong>Personal Use</strong>
-            <p class="soft-text">This first version is set up for simple personal use with local demo-style records.</p>
+          <div id="authPanel" class="simple-note auth-panel">
+            <div class="panel-head">
+              <strong>Access</strong>
+              <span id="authModeBadge" class="chip">Demo</span>
+            </div>
+            <p id="authMessage" class="soft-text">Local preview mode. Sign-in will appear after the app is connected to Supabase.</p>
+            <div class="auth-controls">
+              <input id="authEmail" type="email" placeholder="Email" />
+              <input id="authPassword" type="password" placeholder="Password" />
+              <input id="authCustomerCode" type="text" placeholder="Customer short name (for sign up)" />
+            </div>
+            <div class="auth-actions">
+              <button type="button" id="signInButton">Sign In</button>
+              <button type="button" class="secondary" id="signUpButton">Sign Up</button>
+              <button type="button" class="ghost" id="signOutButton">Sign Out</button>
+            </div>
           </div>
         </div>
       </section>
@@ -52,12 +65,16 @@
         </article>
       </section>
 
-      <section class="entry-card">
+      <section id="entryCard" class="entry-card">
         <div class="section-head">
           <h2>Add Order Record</h2>
           <span class="chip">Auto save</span>
         </div>
         <form id="orderForm" class="entry-grid">
+          <div class="field-group">
+            <label for="customerCode">Customer Short Name</label>
+            <input id="customerCode" type="text" placeholder="harvey" required />
+          </div>
           <div class="field-group">
             <label for="orderDate">Date of Order</label>
             <input id="orderDate" type="date" required />
@@ -134,6 +151,7 @@
             <thead>
               <tr>
                 <th>Date of Order</th>
+                <th>Customer Short Name</th>
                 <th>Customer Invoice No.</th>
                 <th>Factory Invoice No.</th>
                 <th>F.E.</th>
