@@ -147,6 +147,9 @@
             <h2>Order Board</h2>
             <p class="soft-text">Click one order in the list to open its details below.</p>
           </div>
+          <div class="board-actions">
+            <button type="button" id="exportExcelButton" class="ghost export-button">Export Excel</button>
+          </div>
           <div class="view-tags">
             <span class="chip">Desktop Table</span>
             <span class="chip">Mobile Cards</span>
@@ -194,6 +197,7 @@
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="./config.js"></script>
     <script src="./app.js"></script>
   </body>

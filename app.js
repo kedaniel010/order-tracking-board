@@ -65,6 +65,7 @@ const els = {
   signInButton: document.getElementById("signInButton"),
   signUpButton: document.getElementById("signUpButton"),
   signOutButton: document.getElementById("signOutButton"),
+  exportExcelButton: document.getElementById("exportExcelButton"),
   orderForm: document.getElementById("orderForm"),
   entryCard: document.getElementById("entryCard"),
   customerCode: document.getElementById("customerCode"),
@@ -88,6 +89,7 @@ async function init() {
   bindSelection();
   bindInlineEditing();
   bindAuth();
+  bindExport();
   setupSupabase();
   await loadOrders();
   renderAll();
@@ -178,6 +180,10 @@ function bindAuth() {
   els.signInButton.addEventListener("click", signIn);
   els.signUpButton.addEventListener("click", signUp);
   els.signOutButton.addEventListener("click", signOut);
+}
+
+function bindExport() {
+  els.exportExcelButton.addEventListener("click", exportOrdersToExcel);
 }
 
 function setupSupabase() {
@@ -551,6 +557,48 @@ function renderMetrics() {
   els.activeOrders.textContent = String(active);
   els.etaThisWeek.textContent = String(weekEta);
   els.followupOrders.textContent = String(followup);
+}
+
+function exportOrdersToExcel() {
+  if (!state.orders.length) {
+    showToast("No orders to export.");
+    return;
+  }
+
+  if (!window.XLSX) {
+    showToast("Excel export is not available right now.");
+    return;
+  }
+
+  const rows = state.orders.map((order) => ({
+    "Date of Order": order.order_date || "",
+    "Customer Short Name": order.customer_code || "",
+    "Customer Invoice No.": order.customer_invoice_no || "",
+    "Factory Invoice No.": order.factory_invoice_no || "",
+    "F.E.": order.fe_date || "",
+    "T.E.": order.te_date || "",
+    "OA Process": order.oa_process || "",
+    "Production Finish Date": order.production_finish_date || "",
+    "Production Status": statusLabels[order.production_status] || order.production_status || "",
+    "U9 before shipment": order.u9_before_shipment || "",
+    "SO": order.so_no || "",
+    "ETD": order.etd || "",
+    "ETA": order.eta || "",
+    "Notes": order.notes || ""
+  }));
+
+  const worksheet = window.XLSX.utils.json_to_sheet(rows);
+  const workbook = window.XLSX.utils.book_new();
+  window.XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+  window.XLSX.writeFile(workbook, `order-tracking-${formatExportDate(new Date())}.xlsx`);
+  showToast("Excel exported.");
+}
+
+function formatExportDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function canManageOrders() {
