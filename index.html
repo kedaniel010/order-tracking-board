@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Tracking Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="paper-glow paper-glow-left"></div>
+    <div class="paper-glow paper-glow-right"></div>
+
+    <main class="page-shell">
+      <section class="topbar">
+        <div>
+          <span class="eyebrow">Order Tracking</span>
+          <h1>Customer Order Tracking Board</h1>
+          <p>
+            Desktop keeps the full tracking table, while mobile switches to easier-to-scan order cards.
+          </p>
+        </div>
+        <div class="topbar-side">
+          <div class="sync-panel">
+            <div class="panel-row">
+              <strong>Sync Status</strong>
+              <span id="syncBadge" class="status-badge warning">Demo Mode</span>
+            </div>
+            <p id="authStatus" class="soft-text">Demo data is shown until cloud sync is connected.</p>
+            <form id="authForm" class="auth-grid">
+              <input id="emailInput" type="email" placeholder="Email" />
+              <input id="passwordInput" type="password" placeholder="Password" />
+              <button type="button" id="signInButton">Sign In</button>
+              <button type="button" class="secondary" id="signUpButton">Sign Up</button>
+              <button type="button" class="ghost" id="signOutButton">Sign Out</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-strip">
+        <article class="metric-box">
+          <span>Total Orders</span>
+          <strong id="totalOrders">0</strong>
+        </article>
+        <article class="metric-box">
+          <span>Active</span>
+          <strong id="activeOrders">0</strong>
+        </article>
+        <article class="metric-box">
+          <span>ETA This Week</span>
+          <strong id="etaThisWeek">0</strong>
+        </article>
+        <article class="metric-box">
+          <span>Need Follow-up</span>
+          <strong id="followupOrders">0</strong>
+        </article>
+      </section>
+
+      <section class="entry-card">
+        <div class="section-head">
+          <h2>Add Order Record</h2>
+          <span class="chip">Auto save</span>
+        </div>
+        <form id="orderForm" class="entry-grid">
+          <input id="orderDate" type="date" required />
+          <input id="customerInvoiceNo" type="text" placeholder="Customer Invoice No." required />
+          <input id="factoryInvoiceNo" type="text" placeholder="Factory Invoice No." />
+          <input id="customerName" type="text" placeholder="Customer" required />
+          <input id="factoryName" type="text" placeholder="Factory" />
+          <input id="feDate" type="date" aria-label="F.E." title="F.E." />
+          <input id="teDate" type="date" aria-label="T.E." title="T.E." />
+          <input id="productionFinishDate" type="date" aria-label="Production Finish" title="Production Finish" />
+          <input id="oaProcess" type="text" placeholder="OA Process" />
+          <select id="productionStatus">
+            <option value="pending">Pending</option>
+            <option value="in_production">In Production</option>
+            <option value="packing">Packing</option>
+            <option value="ready">Ready to Ship</option>
+            <option value="shipped">Shipped</option>
+          </select>
+          <input id="soNo" type="text" placeholder="SO" />
+          <input id="upBeforeShipment" type="text" placeholder="UP before shipment" />
+          <input id="eta" type="date" aria-label="ETA" title="ETA" />
+          <textarea id="orderNotes" rows="3" placeholder="Notes"></textarea>
+          <button type="submit" class="submit-btn">Save This Record</button>
+        </form>
+      </section>
+
+      <section class="board-card">
+        <div class="section-head section-head-mobile">
+          <div>
+            <h2>Order Board</h2>
+            <p class="soft-text">Desktop shows the table, mobile shows cards.</p>
+          </div>
+          <div class="view-tags">
+            <span class="chip">Desktop Table</span>
+            <span class="chip">Mobile Cards</span>
+          </div>
+        </div>
+
+        <div class="table-wrap desktop-view">
+          <table class="tracking-table">
+            <thead>
+              <tr>
+                <th>Date of Order</th>
+                <th>Customer Invoice No.</th>
+                <th>Factory Invoice No.</th>
+                <th>Customer</th>
+                <th>Factory</th>
+                <th>F.E.</th>
+                <th>T.E.</th>
+                <th>Production Finish</th>
+                <th>OA Process</th>
+                <th>Production Status</th>
+                <th>SO</th>
+                <th>UP before shipment</th>
+                <th>ETA</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="orderTableBody"></tbody>
+          </table>
+        </div>
+
+        <div id="orderCards" class="mobile-cards mobile-view"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
