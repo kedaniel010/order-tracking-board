@@ -25,20 +25,10 @@
             Desktop keeps the full tracking table, while mobile switches to easier-to-scan order cards.
           </p>
         </div>
-        <div class="topbar-side">
-          <div class="sync-panel">
-            <div class="panel-row">
-              <strong>Sync Status</strong>
-              <span id="syncBadge" class="status-badge warning">Demo Mode</span>
-            </div>
-            <p id="authStatus" class="soft-text">Demo data is shown until cloud sync is connected.</p>
-            <form id="authForm" class="auth-grid">
-              <input id="emailInput" type="email" placeholder="Email" />
-              <input id="passwordInput" type="password" placeholder="Password" />
-              <button type="button" id="signInButton">Sign In</button>
-              <button type="button" class="secondary" id="signUpButton">Sign Up</button>
-              <button type="button" class="ghost" id="signOutButton">Sign Out</button>
-            </form>
+        <div class="topbar-note">
+          <div class="simple-note">
+            <strong>Personal Use</strong>
+            <p class="soft-text">This first version is set up for simple personal use with local demo-style records.</p>
           </div>
         </div>
       </section>
@@ -68,25 +58,60 @@
           <span class="chip">Auto save</span>
         </div>
         <form id="orderForm" class="entry-grid">
-          <input id="orderDate" type="date" required />
-          <input id="customerInvoiceNo" type="text" placeholder="Customer Invoice No." required />
-          <input id="factoryInvoiceNo" type="text" placeholder="Factory Invoice No." />
-          <input id="customerName" type="text" placeholder="Customer" required />
-          <input id="factoryName" type="text" placeholder="Factory" />
-          <input id="feDate" type="date" aria-label="F.E." title="F.E." />
-          <input id="teDate" type="date" aria-label="T.E." title="T.E." />
-          <input id="productionFinishDate" type="date" aria-label="Production Finish" title="Production Finish" />
-          <input id="oaProcess" type="text" placeholder="OA Process" />
-          <select id="productionStatus">
-            <option value="pending">Pending</option>
-            <option value="in_production">In Production</option>
-            <option value="packing">Packing</option>
-            <option value="ready">Ready to Ship</option>
-            <option value="shipped">Shipped</option>
-          </select>
-          <input id="soNo" type="text" placeholder="SO" />
-          <input id="upBeforeShipment" type="text" placeholder="UP before shipment" />
-          <input id="eta" type="date" aria-label="ETA" title="ETA" />
+          <div class="field-group">
+            <label for="orderDate">Date of Order</label>
+            <input id="orderDate" type="date" required />
+          </div>
+          <div class="field-group">
+            <label for="customerInvoiceNo">Customer Invoice</label>
+            <input id="customerInvoiceNo" type="text" placeholder="Customer Invoice" required />
+          </div>
+          <div class="field-group">
+            <label for="factoryInvoiceNo">Factory Invoice</label>
+            <input id="factoryInvoiceNo" type="text" placeholder="Factory Invoice" />
+          </div>
+          <div class="field-group">
+            <label for="feDate">F.E.</label>
+            <input id="feDate" type="date" aria-label="F.E." title="F.E." />
+          </div>
+          <div class="field-group">
+            <label for="teDate">T.E.</label>
+            <input id="teDate" type="date" aria-label="T.E." title="T.E." />
+          </div>
+          <div class="field-group">
+            <label for="oaProcess">OA Process</label>
+            <input id="oaProcess" type="text" placeholder="OA Process" />
+          </div>
+          <div class="field-group">
+            <label for="productionFinishDate">Production Finish Date</label>
+            <input id="productionFinishDate" type="date" aria-label="Production Finish Date" title="Production Finish Date" />
+          </div>
+          <div class="field-group">
+            <label for="productionStatus">Production Status</label>
+            <select id="productionStatus">
+              <option value="pending">Pending</option>
+              <option value="in_production">In Production</option>
+              <option value="packing">Packing</option>
+              <option value="ready">Ready to Ship</option>
+              <option value="shipped">Shipped</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="u9BeforeShipment">U9 before shipment</label>
+            <input id="u9BeforeShipment" type="text" placeholder="U9 before shipment" />
+          </div>
+          <div class="field-group">
+            <label for="soNo">SO</label>
+            <input id="soNo" type="text" placeholder="SO" />
+          </div>
+          <div class="field-group">
+            <label for="etd">ETD</label>
+            <input id="etd" type="date" aria-label="ETD" title="ETD" />
+          </div>
+          <div class="field-group">
+            <label for="eta">ETA</label>
+            <input id="eta" type="date" aria-label="ETA" title="ETA" />
+          </div>
           <textarea id="orderNotes" rows="3" placeholder="Notes"></textarea>
           <button type="submit" class="submit-btn">Save This Record</button>
         </form>
@@ -96,7 +121,7 @@
         <div class="section-head section-head-mobile">
           <div>
             <h2>Order Board</h2>
-            <p class="soft-text">Desktop shows the table, mobile shows cards.</p>
+            <p class="soft-text">Click one order in the list to open its details below.</p>
           </div>
           <div class="view-tags">
             <span class="chip">Desktop Table</span>
@@ -111,15 +136,14 @@
                 <th>Date of Order</th>
                 <th>Customer Invoice No.</th>
                 <th>Factory Invoice No.</th>
-                <th>Customer</th>
-                <th>Factory</th>
                 <th>F.E.</th>
                 <th>T.E.</th>
-                <th>Production Finish</th>
                 <th>OA Process</th>
+                <th>Production Finish Date</th>
                 <th>Production Status</th>
+                <th>U9 before shipment</th>
                 <th>SO</th>
-                <th>UP before shipment</th>
+                <th>ETD</th>
                 <th>ETA</th>
                 <th>Notes</th>
               </tr>
@@ -129,6 +153,16 @@
         </div>
 
         <div id="orderCards" class="mobile-cards mobile-view"></div>
+
+        <section id="orderDetailPanel" class="detail-panel is-hidden">
+          <div class="section-head">
+            <div>
+              <h3 id="detailTitle">Order Details</h3>
+              <p id="detailSubtitle" class="soft-text">Select an order from the list above.</p>
+            </div>
+          </div>
+          <div id="detailGrid" class="detail-grid"></div>
+        </section>
       </section>
     </main>
 
