@@ -293,7 +293,7 @@ body {
 }
 
 .entry-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-top: 10px;
 }
 
@@ -304,8 +304,9 @@ body {
 
 .field-group label {
   font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.01em;
 }
 
 .entry-grid textarea,
