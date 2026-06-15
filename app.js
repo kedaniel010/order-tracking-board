@@ -49,13 +49,16 @@ const state = {
   orders: [],
   selectedOrderId: null,
   session: null,
-  profile: null
+  profile: null,
+  authOpen: false
 };
 
 const els = {
   authPanel: document.getElementById("authPanel"),
+  authBody: document.getElementById("authBody"),
   authModeBadge: document.getElementById("authModeBadge"),
   authMessage: document.getElementById("authMessage"),
+  authToggleButton: document.getElementById("authToggleButton"),
   authEmail: document.getElementById("authEmail"),
   authPassword: document.getElementById("authPassword"),
   authCustomerCode: document.getElementById("authCustomerCode"),
@@ -171,6 +174,7 @@ function bindInlineEditing() {
 }
 
 function bindAuth() {
+  els.authToggleButton.addEventListener("click", toggleAuthPanel);
   els.signInButton.addEventListener("click", signIn);
   els.signUpButton.addEventListener("click", signUp);
   els.signOutButton.addEventListener("click", signOut);
@@ -179,7 +183,7 @@ function bindAuth() {
 function setupSupabase() {
   const config = window.APP_CONFIG || {};
   if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY || !window.supabase) {
-    setDemoMode("Demo mode. Configure Supabase to enable admin and customer sign-in.");
+    setDemoMode("Demo mode. Connect Supabase to enable sign-in.");
     return;
   }
 
@@ -391,16 +395,18 @@ function renderAll() {
 }
 
 function renderAuthPanel() {
+  syncAuthPanelState();
+
   if (state.mode === "demo") {
     els.authModeBadge.textContent = "Demo";
-    els.authMessage.textContent = "Local preview mode. Sign-in will appear after the app is connected to Supabase.";
+    els.authMessage.textContent = "Demo mode. Sign-in appears after Supabase is connected.";
     els.entryCard.classList.remove("is-restricted");
     return;
   }
 
   if (!state.session) {
     els.authModeBadge.textContent = "Cloud";
-    els.authMessage.textContent = "Sign in as admin to manage all orders, or sign up customers with their own short name so they only see matching orders.";
+    els.authMessage.textContent = "Admin manages all orders. Each customer sees only matching short-name orders.";
     els.entryCard.classList.add("is-restricted");
     return;
   }
@@ -415,6 +421,17 @@ function renderAuthPanel() {
   } else {
     els.entryCard.classList.add("is-restricted");
   }
+}
+
+function toggleAuthPanel() {
+  state.authOpen = !state.authOpen;
+  syncAuthPanelState();
+}
+
+function syncAuthPanelState() {
+  els.authBody.classList.toggle("is-collapsed", !state.authOpen);
+  els.authToggleButton.textContent = state.authOpen ? "Hide" : "Open";
+  els.authToggleButton.setAttribute("aria-expanded", state.authOpen ? "true" : "false");
 }
 
 function renderTable() {

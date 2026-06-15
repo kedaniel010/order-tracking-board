@@ -65,9 +65,9 @@ body {
 
 .topbar {
   display: grid;
-  grid-template-columns: 1.2fr 420px;
-  gap: 24px;
-  padding: 18px 20px;
+  grid-template-columns: minmax(0, 1.45fr) 320px;
+  gap: 18px;
+  padding: 16px 18px;
 }
 
 .topbar-note {
@@ -77,18 +77,79 @@ body {
 }
 
 .simple-note {
-  max-width: 360px;
+  max-width: 320px;
   width: 100%;
   background: rgba(255, 252, 247, 0.84);
   border: 1px solid rgba(107, 78, 55, 0.08);
-  border-radius: 22px;
-  padding: 14px;
+  border-radius: 18px;
+  padding: 12px;
 }
 
 .simple-note strong {
   display: block;
-  margin-bottom: 6px;
-  font-size: 1.05rem;
+  margin-bottom: 2px;
+  font-size: 0.95rem;
+}
+
+.auth-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-toggle {
+  width: auto;
+  min-width: 68px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(101, 75, 53, 0.16);
+  font-size: 12px;
+}
+
+.auth-summary {
+  padding-right: 4px;
+}
+
+.auth-body {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-body.is-collapsed {
+  display: none;
+}
+
+.auth-controls,
+.auth-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-controls {
+  grid-template-columns: 1fr;
+}
+
+.auth-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.auth-panel .soft-text {
+  font-size: 0.86rem;
+  line-height: 1.35;
 }
 
 .eyebrow {
@@ -200,6 +261,25 @@ body {
   margin-top: 12px;
 }
 
+.entry-card.is-restricted form {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.entry-card.is-restricted::after {
+  content: "Admin only";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #efe0ba;
+  color: #8c6522;
+  font-weight: 700;
+  font-size: 12px;
+}
+
 .entry-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 10px;
@@ -235,7 +315,7 @@ input,
 select,
 textarea {
   background: #fffdf9;
-  padding: 10px 12px;
+  padding: 9px 11px;
   color: var(--ink);
 }
 
@@ -247,7 +327,7 @@ textarea:focus {
 
 button {
   cursor: pointer;
-  padding: 10px 14px;
+  padding: 9px 12px;
   background: var(--accent);
   color: #fff;
   font-weight: 700;
@@ -288,7 +368,7 @@ button.ghost {
 .tracking-table td {
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  padding: 14px 12px;
+  padding: 10px 10px;
   text-align: left;
   vertical-align: top;
   background: rgba(255, 252, 246, 0.94);
@@ -313,6 +393,28 @@ button.ghost {
 
 .tracking-table tr.is-selected td {
   background: #f3e6d7;
+}
+
+.cell-input,
+.cell-select,
+.cell-textarea {
+  width: 100%;
+  border: 1px solid rgba(101, 75, 53, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.cell-input,
+.cell-select {
+  min-height: 40px;
+}
+
+.cell-textarea {
+  min-height: 86px;
+  resize: vertical;
 }
 
 .table-pill {
@@ -485,8 +587,13 @@ button.ghost {
     padding: 16px;
   }
 
+  .auth-controls,
   .entry-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .metrics-strip {
@@ -500,6 +607,8 @@ button.ghost {
   }
 
   .metrics-strip,
+  .auth-controls,
+  .auth-actions,
   .entry-grid,
   .order-card-grid,
   .detail-grid {
@@ -511,6 +620,10 @@ button.ghost {
   .board-card {
     border-radius: 20px;
     padding: 14px;
+  }
+
+  .simple-note {
+    max-width: none;
   }
 
   .desktop-view {

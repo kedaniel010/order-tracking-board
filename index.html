@@ -29,18 +29,25 @@
           <div id="authPanel" class="simple-note auth-panel">
             <div class="panel-head">
               <strong>Access</strong>
-              <span id="authModeBadge" class="chip">Demo</span>
+              <div class="panel-head-actions">
+                <span id="authModeBadge" class="chip">Demo</span>
+                <button type="button" id="authToggleButton" class="panel-toggle" aria-expanded="false">Open</button>
+              </div>
             </div>
-            <p id="authMessage" class="soft-text">Local preview mode. Sign-in will appear after the app is connected to Supabase.</p>
-            <div class="auth-controls">
-              <input id="authEmail" type="email" placeholder="Email" />
-              <input id="authPassword" type="password" placeholder="Password" />
-              <input id="authCustomerCode" type="text" placeholder="Customer short name (for sign up)" />
+            <div class="auth-summary">
+              <p id="authMessage" class="soft-text">Demo mode. Sign-in appears after Supabase is connected.</p>
             </div>
-            <div class="auth-actions">
-              <button type="button" id="signInButton">Sign In</button>
-              <button type="button" class="secondary" id="signUpButton">Sign Up</button>
-              <button type="button" class="ghost" id="signOutButton">Sign Out</button>
+            <div id="authBody" class="auth-body is-collapsed">
+              <div class="auth-controls">
+                <input id="authEmail" type="email" placeholder="Email" />
+                <input id="authPassword" type="password" placeholder="Password" />
+                <input id="authCustomerCode" type="text" placeholder="Customer short name (for sign up)" />
+              </div>
+              <div class="auth-actions">
+                <button type="button" id="signInButton">Sign In</button>
+                <button type="button" class="secondary" id="signUpButton">Sign Up</button>
+                <button type="button" class="ghost" id="signOutButton">Sign Out</button>
+              </div>
             </div>
           </div>
         </div>
