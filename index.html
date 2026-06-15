@@ -35,7 +35,7 @@
               </div>
             </div>
             <div class="auth-summary">
-              <p id="authMessage" class="soft-text">Demo mode. Sign-in appears after Supabase is connected.</p>
+              <p id="authMessage" class="soft-text"></p>
             </div>
             <div id="authBody" class="auth-body is-collapsed">
               <div class="auth-controls">
@@ -79,10 +79,6 @@
         </div>
         <form id="orderForm" class="entry-grid">
           <div class="field-group">
-            <label for="customerCode">Customer Short Name</label>
-            <input id="customerCode" type="text" placeholder="harvey" required />
-          </div>
-          <div class="field-group">
             <label for="orderDate">Date of Order</label>
             <input id="orderDate" type="date" required />
           </div>
@@ -93,6 +89,10 @@
           <div class="field-group">
             <label for="factoryInvoiceNo">Factory Invoice</label>
             <input id="factoryInvoiceNo" type="text" placeholder="Factory Invoice" />
+          </div>
+          <div class="field-group">
+            <label for="soNo">SO</label>
+            <input id="soNo" type="text" placeholder="SO" />
           </div>
           <div class="field-group">
             <label for="feDate">F.E.</label>
@@ -125,16 +125,23 @@
             <input id="u9BeforeShipment" type="text" placeholder="U9 before shipment" />
           </div>
           <div class="field-group">
-            <label for="soNo">SO</label>
-            <input id="soNo" type="text" placeholder="SO" />
-          </div>
-          <div class="field-group">
             <label for="etd">ETD</label>
             <input id="etd" type="date" aria-label="ETD" title="ETD" />
           </div>
           <div class="field-group">
             <label for="eta">ETA</label>
             <input id="eta" type="date" aria-label="ETA" title="ETA" />
+          </div>
+          <div class="advanced-panel">
+            <button type="button" id="advancedToggleButton" class="advanced-toggle" aria-expanded="false">
+              Advanced
+            </button>
+            <div id="advancedBody" class="advanced-body is-collapsed">
+              <div class="field-group customer-code-row">
+                <label for="customerCode">Customer Short Name</label>
+                <input id="customerCode" type="text" required />
+              </div>
+            </div>
           </div>
           <textarea id="orderNotes" rows="3" placeholder="Notes"></textarea>
           <button type="submit" class="submit-btn">Save This Record</button>

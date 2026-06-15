@@ -50,7 +50,8 @@ const state = {
   selectedOrderId: null,
   session: null,
   profile: null,
-  authOpen: false
+  authOpen: false,
+  advancedOpen: false
 };
 
 const els = {
@@ -62,6 +63,8 @@ const els = {
   authEmail: document.getElementById("authEmail"),
   authPassword: document.getElementById("authPassword"),
   authCustomerCode: document.getElementById("authCustomerCode"),
+  advancedToggleButton: document.getElementById("advancedToggleButton"),
+  advancedBody: document.getElementById("advancedBody"),
   signInButton: document.getElementById("signInButton"),
   signUpButton: document.getElementById("signUpButton"),
   signOutButton: document.getElementById("signOutButton"),
@@ -177,6 +180,7 @@ function bindInlineEditing() {
 
 function bindAuth() {
   els.authToggleButton.addEventListener("click", toggleAuthPanel);
+  els.advancedToggleButton.addEventListener("click", toggleAdvancedPanel);
   els.signInButton.addEventListener("click", signIn);
   els.signUpButton.addEventListener("click", signUp);
   els.signOutButton.addEventListener("click", signOut);
@@ -394,6 +398,7 @@ async function signOut() {
 
 function renderAll() {
   renderAuthPanel();
+  syncAdvancedPanelState();
   renderTable();
   renderCards();
   renderDetailPanel();
@@ -405,22 +410,21 @@ function renderAuthPanel() {
 
   if (state.mode === "demo") {
     els.authModeBadge.textContent = "Demo";
-    els.authMessage.textContent = "Demo mode. Sign-in appears after Supabase is connected.";
+    els.authMessage.textContent = "";
     els.entryCard.classList.remove("is-restricted");
     return;
   }
 
   if (!state.session) {
     els.authModeBadge.textContent = "Cloud";
-    els.authMessage.textContent = "Admin manages all orders. Each customer sees only matching short-name orders.";
+    els.authMessage.textContent = "";
     els.entryCard.classList.add("is-restricted");
     return;
   }
 
   const roleLabel = canManageOrders() ? "Admin" : "Customer";
   els.authModeBadge.textContent = roleLabel;
-  const codeText = state.profile?.customer_code ? ` Customer code: ${state.profile.customer_code}.` : "";
-  els.authMessage.textContent = `Signed in as ${state.session.user.email}.${codeText} ${canManageOrders() ? "You can manage all orders." : "You can only see your own orders."}`;
+  els.authMessage.textContent = "";
 
   if (canManageOrders()) {
     els.entryCard.classList.remove("is-restricted");
@@ -438,6 +442,17 @@ function syncAuthPanelState() {
   els.authBody.classList.toggle("is-collapsed", !state.authOpen);
   els.authToggleButton.textContent = state.authOpen ? "Hide" : "Open";
   els.authToggleButton.setAttribute("aria-expanded", state.authOpen ? "true" : "false");
+}
+
+function toggleAdvancedPanel() {
+  state.advancedOpen = !state.advancedOpen;
+  syncAdvancedPanelState();
+}
+
+function syncAdvancedPanelState() {
+  els.advancedBody.classList.toggle("is-collapsed", !state.advancedOpen);
+  els.advancedToggleButton.textContent = state.advancedOpen ? "Hide Advanced" : "Advanced";
+  els.advancedToggleButton.setAttribute("aria-expanded", state.advancedOpen ? "true" : "false");
 }
 
 function renderTable() {
@@ -610,7 +625,7 @@ function setDemoMode(message) {
   state.session = null;
   state.profile = null;
   els.authModeBadge.textContent = "Demo";
-  els.authMessage.textContent = message;
+  els.authMessage.textContent = "";
 }
 
 function renderDateInput(orderId, field, value) {
