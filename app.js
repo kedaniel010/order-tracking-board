@@ -73,6 +73,7 @@ const els = {
   entryCard: document.getElementById("entryCard"),
   customerCode: document.getElementById("customerCode"),
   orderNotes: document.getElementById("orderNotes"),
+  orderFormMessage: document.getElementById("orderFormMessage"),
   orderTableBody: document.getElementById("orderTableBody"),
   orderCards: document.getElementById("orderCards"),
   orderDetailPanel: document.getElementById("orderDetailPanel"),
@@ -101,6 +102,8 @@ async function init() {
 }
 
 function bindForm() {
+  els.customerCode.addEventListener("input", clearOrderFormMessage);
+
   els.orderForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -121,20 +124,46 @@ function bindForm() {
       notes: document.getElementById("orderNotes").value.trim()
     };
 
-    if (!payload.order_date || !payload.customer_invoice_no || !payload.customer_code) {
-      showToast("Please enter order date, customer invoice number, and customer short name.");
+    if (!payload.order_date || !payload.customer_invoice_no) {
+      clearOrderFormMessage();
+      showToast("Please enter order date and customer invoice number.");
+      return;
+    }
+
+    if (!payload.customer_code) {
+      state.advancedOpen = true;
+      syncAdvancedPanelState();
+      setOrderFormMessage("Please fill in Customer Short Name under Advanced before saving.");
+      els.customerCode.focus();
+      showToast("Customer short name is required.");
       return;
     }
 
     if (!canManageOrders()) {
+      clearOrderFormMessage();
       showToast("Only admin accounts can create or edit orders.");
       return;
     }
 
-    await saveOrder(payload);
+    clearOrderFormMessage();
+    const savedOrder = await saveOrder(payload);
+    if (!savedOrder) {
+      return;
+    }
+
+    state.orders = [savedOrder, ...state.orders.filter((item) => item.id !== savedOrder.id)];
+    state.selectedOrderId = savedOrder.id;
     els.orderForm.reset();
+    els.orderNotes.classList.remove("is-expanded");
+    renderAll();
     await loadOrders();
     renderAll();
+
+    if (state.mode === "cloud" && !state.orders.length) {
+      showToast("The order may be saved, but this account cannot read the order list yet.");
+      return;
+    }
+
     showToast("Order record saved.");
   });
 }
@@ -283,17 +312,26 @@ async function loadProfile(userId) {
 
 async function saveOrder(payload) {
   if (state.mode === "demo" || !state.supabase) {
-    demoOrders.unshift({
+    const newOrder = {
       id: `o-${crypto.randomUUID()}`,
       ...payload
-    });
-    return;
+    };
+    demoOrders.unshift(newOrder);
+    return newOrder;
   }
 
-  const { error } = await state.supabase.from("orders").insert(payload);
+  const { data, error } = await state.supabase
+    .from("orders")
+    .insert(payload)
+    .select("*")
+    .single();
+
   if (error) {
     showToast(error.message);
+    return false;
   }
+
+  return data;
 }
 
 async function updateOrderField(orderId, field, value) {
@@ -473,6 +511,16 @@ function syncAdvancedPanelState() {
   els.advancedBody.classList.toggle("is-collapsed", !state.advancedOpen);
   els.advancedToggleButton.textContent = state.advancedOpen ? "Hide Advanced" : "Advanced";
   els.advancedToggleButton.setAttribute("aria-expanded", state.advancedOpen ? "true" : "false");
+}
+
+function setOrderFormMessage(message) {
+  els.orderFormMessage.textContent = message;
+  els.orderFormMessage.classList.remove("is-hidden");
+}
+
+function clearOrderFormMessage() {
+  els.orderFormMessage.textContent = "";
+  els.orderFormMessage.classList.add("is-hidden");
 }
 
 function renderTable() {
